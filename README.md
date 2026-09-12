@@ -1,6 +1,6 @@
 # AI Usage Indicator
 
-A lightweight Windows floating widget for monitoring the **Chat** and **Work** usage shown by your signed-in ChatGPT accounts.
+A lightweight Windows floating widget for monitoring the **Work shared-plan** usage shown by your signed-in ChatGPT accounts.
 
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows&logoColor=white)
 ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)
@@ -8,10 +8,10 @@ A lightweight Windows floating widget for monitoring the **Chat** and **Work** u
 ## Features
 
 - Compact, always-on-top usage bar that floats above your work.
-- Click the bar to expand and view separate Chat and Work meters.
+- Click the bar to expand and view the live Work shared-plan meter.
 - Drag it anywhere on the screen.
 - Add multiple ChatGPT account profiles and sign in to each one directly inside the app.
-- Auto-refreshes the usage details visible on the signed-in ChatGPT page every 20 seconds.
+- Opens the plan usage screen automatically after a successful sign-in and refreshes it in the background.
 - Each account keeps a separate local Microsoft Edge WebView profile, so sessions do not mix.
 - No password field is created or handled by this app; the sign-in page is ChatGPT's own page.
 - GitHub Actions creates a downloadable, self-contained Windows build after every push.
@@ -30,8 +30,8 @@ Windows may display a SmartScreen notice because the app is new and unsigned. Se
 1. Open `UsageIndicator.exe`. A slim bar appears at the top of the screen.
 2. Click the bar to expand it; drag it to reposition it.
 3. Select **+ Account**, then sign in on the official ChatGPT page inside the app.
-4. Open ChatGPT's usage dashboard for that account. The app detects the displayed **Chat** and **Work** values and refreshes them every 20 seconds.
-5. Select **+ Account** again for each additional account. Each login is separated from the others.
+4. After the sign-in succeeds, the app automatically opens the plan usage screen in the background and detects the current percentage and next reset.
+5. The login page disappears after the plan is detected. Select **+ Account** again for each additional account.
 6. Click the bar again to collapse it. Your account sessions and last detected values remain available on the same PC.
 
 To start it automatically with Windows, place a shortcut to `UsageIndicator.exe` in `shell:startup`.

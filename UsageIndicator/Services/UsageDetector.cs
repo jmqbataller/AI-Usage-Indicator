@@ -17,11 +17,9 @@ public static partial class UsageDetector
 
         var plan = FindPlanAllowance(clean);
         snapshot.PlanName = plan.name;
-        snapshot.ChatExcludedFromPlan = Regex.IsMatch(clean, @"chat conversations? (?:are |is )?not included", RegexOptions.IgnoreCase);
-        snapshot.ChatPercent = snapshot.ChatExcludedFromPlan ? null : plan.percent;
-        snapshot.ChatReset = snapshot.ChatExcludedFromPlan ? "Not included in this plan" : plan.reset;
         snapshot.WorkPercent = plan.percent;
         snapshot.WorkReset = plan.reset;
+        snapshot.UsageInfo = plan.percent is int percent ? $"{100 - percent}% of this plan used" : "Waiting for plan data";
         var token = TokenRegex().Match(clean);
         if (token.Success) snapshot.TokenInfo = token.Groups[1].Value + " tokens shown by ChatGPT";
 

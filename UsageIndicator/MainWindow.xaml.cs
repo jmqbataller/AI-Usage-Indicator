@@ -18,7 +18,6 @@ public partial class MainWindow : Window
     private bool _dragStarted;
     private bool _isExpanded;
     private bool _suppressAccountChange;
-    private bool _usageDashboardRequested;
 
     public MainWindow()
     {
@@ -29,8 +28,8 @@ public partial class MainWindow : Window
         _suppressAccountChange = false;
         if (_accounts.Count > 0) AccountPicker.SelectedIndex = 0;
         Render();
-        _pollTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(20) };
-        _pollTimer.Tick += async (_, _) => await RefreshUsageAsync();
+        _pollTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _pollTimer.Tick += async (_, _) => { await TryOpenUsageDashboardAsync(); await RefreshUsageAsync(); };
         _pollTimer.Start();
     }
 
@@ -51,12 +50,12 @@ public partial class MainWindow : Window
 
     private async Task ActivateAccountAsync(AccountProfile account)
     {
-        _usageDashboardRequested = false;
         if (_browser is not null)
         {
             _browser.Dispose(); BrowserHost.Children.Clear(); _browser = null;
         }
-        SyncStatus.Text = "Creating this account's secure browser profile…";
+        LoginPanel.Visibility = Visibility.Visible;
+        SyncStatus.Text = "Sign in once. The app will then open and monitor the plan automatically.";
         _browser = new WebView2(); BrowserHost.Children.Add(_browser);
         var environment = await CoreWebView2Environment.CreateAsync(null, ProfileStore.BrowserProfilePath(account.Id));
         await _browser.EnsureCoreWebView2Async(environment);
@@ -69,13 +68,13 @@ public partial class MainWindow : Window
         Render();
     }
 
-    private async void OpenChatGpt_Click(object sender, RoutedEventArgs e)
+    private async void SignInAgain_Click(object sender, RoutedEventArgs e)
     {
         if (_browser is null && ActiveAccount is not null) await ActivateAccountAsync(ActiveAccount);
+        LoginPanel.Visibility = Visibility.Visible;
+        UpdateWindowSize();
         _browser?.CoreWebView2.Navigate("https://chatgpt.com/");
     }
-
-    private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshUsageAsync();
 
     private async Task RefreshUsageAsync()
     {
@@ -85,28 +84,35 @@ public partial class MainWindow : Window
             var result = await _browser.CoreWebView2.ExecuteScriptAsync("document.body ? document.body.innerText : ''");
             var pageText = System.Text.Json.JsonSerializer.Deserialize<string>(result) ?? string.Empty;
             ActiveAccount.Usage = UsageDetector.Detect(pageText);
-            ProfileStore.Save(_accounts); Render();
+            if (ActiveAccount.Usage.WorkPercent is not null) LoginPanel.Visibility = Visibility.Collapsed;
+            ProfileStore.Save(_accounts); Render(); UpdateWindowSize();
         }
         catch { SyncStatus.Text = "Could not refresh yet. Keep the signed-in ChatGPT page open."; }
     }
 
     private async Task TryOpenUsageDashboardAsync()
     {
-        if (_usageDashboardRequested || _browser?.CoreWebView2 is null) return;
+        if (_browser?.CoreWebView2 is null) return;
         try
         {
             const string script = """
                 (() => {
-                  const candidates = [...document.querySelectorAll('a,button')];
-                  const usage = candidates.find(el => /^(usage|usage dashboard)$/i.test((el.innerText || '').trim()));
-                  if (!usage) return false;
-                  usage.click();
-                  return true;
+                  const visible = el => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+                  const candidates = [...document.querySelectorAll('a,button,[role="button"]')].filter(visible);
+                  const label = el => [el.innerText, el.getAttribute('aria-label'), el.getAttribute('title')].filter(Boolean).join(' ').trim();
+                  if (/weekly\s+limit/i.test(document.body?.innerText || '')) return 'ready';
+                  const usage = candidates.find(el => /^(usage|usage dashboard)$/i.test(label(el)));
+                  if (usage) { usage.click(); return 'usage'; }
+                  const settings = candidates.find(el => /^settings$/i.test(label(el)));
+                  if (settings) { settings.click(); return 'settings'; }
+                  const accountMenu = candidates.find(el => /profile|account|user menu|open menu/i.test(label(el)));
+                  if (accountMenu) { accountMenu.click(); return 'menu'; }
+                  return 'waiting';
                 })()
                 """;
             var result = await _browser.CoreWebView2.ExecuteScriptAsync(script);
-            _usageDashboardRequested = result == "true";
-            if (_usageDashboardRequested) SyncStatus.Text = "Opening the signed-in ChatGPT usage dashboard…";
+            var step = System.Text.Json.JsonSerializer.Deserialize<string>(result);
+            if (step is "menu" or "settings" or "usage") SyncStatus.Text = "Opening the signed-in ChatGPT plan usage automatically…";
         }
         catch { }
     }
@@ -114,13 +120,12 @@ public partial class MainWindow : Window
     private void Render()
     {
         var usage = ActiveAccount?.Usage;
-        ChatLabel.Text = usage?.ChatExcludedFromPlan == true ? "Not included" : usage?.ChatPercent is int chat ? $"{chat}% remaining" : "Waiting…";
         WorkLabel.Text = usage?.WorkPercent is int work ? $"{work}% left" : "Waiting…";
-        ChatResetLabel.Text = "Reset: " + (usage?.ChatReset ?? "Not shown");
-        WorkResetLabel.Text = "Reset: " + (usage?.WorkReset ?? "Not shown");
+        WorkResetLabel.Text = usage?.WorkReset ?? "Not shown";
+        UsageInfoLabel.Text = usage?.UsageInfo ?? "Waiting for plan data";
         TokenStatus.Text = "Token information: " + (usage?.TokenInfo ?? "Not provided by ChatGPT");
         SyncStatus.Text = usage?.Status ?? "Add an account and sign in to ChatGPT.";
-        CompactStatus.Text = usage is null ? "Add an account" : $"Chat {UsageText(usage.ChatPercent)} • Work {UsageText(usage.WorkPercent)}";
+        CompactStatus.Text = usage is null ? "Add an account" : $"Work {UsageText(usage.WorkPercent)}";
     }
 
     private static string UsageText(int? value) => value is int percent ? percent + "%" : "—";
@@ -157,8 +162,14 @@ public partial class MainWindow : Window
         _isExpanded = !_isExpanded;
         ExpandedPanel.Visibility = _isExpanded ? Visibility.Visible : Visibility.Collapsed;
         AddAccountButton.Visibility = _isExpanded ? Visibility.Visible : Visibility.Collapsed;
-        Height = _isExpanded ? 650 : 64;
+        UpdateWindowSize();
         if (_isExpanded && ActiveAccount is not null && _browser is null) await ActivateAccountAsync(ActiveAccount);
+    }
+
+    private void UpdateWindowSize()
+    {
+        if (!_isExpanded) { Height = 64; return; }
+        Height = LoginPanel.Visibility == Visibility.Visible ? 650 : 255;
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
