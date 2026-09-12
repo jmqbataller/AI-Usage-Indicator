@@ -35,7 +35,7 @@ public static partial class UsageDetector
     {
         var match = PlanLimitRegex().Match(text);
         if (!match.Success) return (null, "Not shown", "Plan limit");
-        var percent = int.TryParse(match.Groups["percent"].Value, out var value) && value is >= 0 and <= 100 ? value : null;
+        int? percent = int.TryParse(match.Groups["percent"].Value, out var value) && value is >= 0 and <= 100 ? value : null;
         return (percent, match.Groups["reset"].Value.Trim(), match.Groups["name"].Value.Trim());
     }
 
