@@ -1,0 +1,24 @@
+<Window x:Class="UsageIndicator.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="380" Height="64" WindowStyle="None" ResizeMode="NoResize" AllowsTransparency="True" Background="Transparent" Topmost="True" ShowInTaskbar="True">
+  <Border x:Name="MainCard" Background="{StaticResource Card}" BorderBrush="#FF363D49" BorderThickness="1" CornerRadius="14" Padding="14" MouseLeftButtonDown="Card_MouseLeftButtonDown" MouseLeftButtonUp="Card_MouseLeftButtonUp" MouseMove="Card_MouseMove">
+    <Grid>
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <Grid Grid.Row="0">
+        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal"><TextBlock Text="✦" Foreground="{StaticResource Accent}" FontSize="20" VerticalAlignment="Center"/><TextBlock Text=" AI Usage" Foreground="{StaticResource Text}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/><TextBlock x:Name="CompactStatus" Foreground="{StaticResource Muted}" FontSize="12" VerticalAlignment="Center" Margin="9,1,0,0"/></StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal"><Button x:Name="EditButton" Content="Edit" Click="Edit_Click" Visibility="Collapsed"/><Button Content="×" FontSize="19" Padding="9,1" Click="Close_Click"/></StackPanel>
+      </Grid>
+      <StackPanel x:Name="UsagePanel" Grid.Row="1" Margin="0,12,0,8" Visibility="Collapsed">
+        <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <StackPanel><TextBlock Text="CODEX" Foreground="{StaticResource Muted}" FontSize="10" FontWeight="Bold"/><TextBlock x:Name="CodexLabel" Foreground="{StaticResource Text}" FontSize="16" FontWeight="SemiBold"/><ProgressBar x:Name="CodexBar" Height="6" Margin="0,5,0,0" Maximum="100" Foreground="{StaticResource Accent}" Background="#FF313845" BorderThickness="0"/></StackPanel>
+          <TextBlock x:Name="CodexResetLabel" Grid.Column="1" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Bottom" Margin="10,0,0,3"/>
+        </Grid>
+        <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <StackPanel><TextBlock Text="CHATGPT WORK" Foreground="{StaticResource Muted}" FontSize="10" FontWeight="Bold"/><TextBlock x:Name="WorkLabel" Foreground="{StaticResource Text}" FontSize="16" FontWeight="SemiBold"/><ProgressBar x:Name="WorkBar" Height="6" Margin="0,5,0,0" Maximum="100" Foreground="#FFAE8CFF" Background="#FF313845" BorderThickness="0"/></StackPanel>
+          <TextBlock x:Name="WorkResetLabel" Grid.Column="1" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Bottom" Margin="10,0,0,3"/>
+        </Grid>
+      </StackPanel>
+      <TextBlock x:Name="FooterText" Grid.Row="2" Text="Values are stored only on this PC — no ChatGPT login data is read." Foreground="{StaticResource Muted}" FontSize="10" Visibility="Collapsed"/>
+    </Grid>
+  </Border>
+</Window>
