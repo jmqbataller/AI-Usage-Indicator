@@ -18,6 +18,7 @@ public partial class MainWindow : Window
     private bool _dragStarted;
     private bool _isExpanded;
     private bool _suppressAccountChange;
+    private bool _usageDashboardRequested;
 
     public MainWindow()
     {
@@ -50,6 +51,7 @@ public partial class MainWindow : Window
 
     private async Task ActivateAccountAsync(AccountProfile account)
     {
+        _usageDashboardRequested = false;
         if (_browser is not null)
         {
             _browser.Dispose(); BrowserHost.Children.Clear(); _browser = null;
@@ -58,7 +60,11 @@ public partial class MainWindow : Window
         _browser = new WebView2(); BrowserHost.Children.Add(_browser);
         var environment = await CoreWebView2Environment.CreateAsync(null, ProfileStore.BrowserProfilePath(account.Id));
         await _browser.EnsureCoreWebView2Async(environment);
-        _browser.CoreWebView2.NavigationCompleted += async (_, _) => await RefreshUsageAsync();
+        _browser.CoreWebView2.NavigationCompleted += async (_, _) =>
+        {
+            await TryOpenUsageDashboardAsync();
+            await RefreshUsageAsync();
+        };
         _browser.CoreWebView2.Navigate("https://chatgpt.com/");
         Render();
     }
@@ -82,6 +88,27 @@ public partial class MainWindow : Window
             ProfileStore.Save(_accounts); Render();
         }
         catch { SyncStatus.Text = "Could not refresh yet. Keep the signed-in ChatGPT page open."; }
+    }
+
+    private async Task TryOpenUsageDashboardAsync()
+    {
+        if (_usageDashboardRequested || _browser?.CoreWebView2 is null) return;
+        try
+        {
+            const string script = """
+                (() => {
+                  const candidates = [...document.querySelectorAll('a,button')];
+                  const usage = candidates.find(el => /^(usage|usage dashboard)$/i.test((el.innerText || '').trim()));
+                  if (!usage) return false;
+                  usage.click();
+                  return true;
+                })()
+                """;
+            var result = await _browser.CoreWebView2.ExecuteScriptAsync(script);
+            _usageDashboardRequested = result == "true";
+            if (_usageDashboardRequested) SyncStatus.Text = "Opening the signed-in ChatGPT usage dashboard…";
+        }
+        catch { }
     }
 
     private void Render()
