@@ -1,18 +1,18 @@
 # ChatGPT Usage Indicator (Windows)
 
-A small, always-on-top Windows widget for showing your remaining **Codex** and **ChatGPT Work** usage, plus each reset time.
+A small, always-on-top Windows widget for monitoring **Chat** and **Work** usage from the signed-in ChatGPT page.
 
 ## What it does
 
-- starts as a compact indicator; click it to expand or collapse the two usage meters;
+- starts as a compact indicator; click it to expand or collapse the Chat and Work meters;
 - stays above other windows and can be dragged anywhere on the screen;
-- remembers its position and the values you entered;
-- displays separate Codex and ChatGPT Work meters;
-- stores its settings only in `%AppData%\\ChatGPTUsageIndicator\\settings.json`.
+- supports separate sign-ins for multiple ChatGPT accounts;
+- refreshes values it detects on the visible ChatGPT page every 20 seconds;
+- stores browser profiles and detected values only in `%LocalAppData%\\AIUsageIndicator`.
 
 ## Important limitation
 
-ChatGPT Work/Codex usage is account data shown in the official usage dashboard. This app deliberately does **not** read browser cookies, saved passwords, or a private/internal ChatGPT endpoint. Update the two values from the dashboard using **Edit**. That means the indicator is accurate when you update it and safe to use on a work PC.
+ChatGPT usage is account data shown in the official dashboard. Sign in manually through the app's ChatGPT page; the app then reads only the text visibly rendered in that browser panel. It does not have a password field or call undocumented/private ChatGPT endpoints.
 
 ## Build on Windows
 
@@ -32,9 +32,9 @@ To launch it with Windows, create a shortcut to the EXE and place it in `shell:s
 
 1. Open the widget. It starts as a slim floating bar at the top of the screen.
 2. **Click the bar** to expand it. Drag the bar instead when you want to move it.
-3. Click **Edit** and copy the remaining percentages and reset information from the official ChatGPT/Codex usage screen.
-4. Click **Save**. The compact bar and expanded meters update immediately.
-5. Click the widget again to collapse it. Your values and its position are remembered the next time it opens.
+3. Click **+ Account**, then sign in on the official ChatGPT page.
+4. Open the usage dashboard. Chat and Work values are detected automatically and refreshed every 20 seconds.
+5. Add another account when needed. Every account has its own local signed-in browser profile.
 
 ## Create the Windows EXE from GitHub
 
