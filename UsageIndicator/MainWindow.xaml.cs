@@ -114,8 +114,8 @@ public partial class MainWindow : Window
     private void Render()
     {
         var usage = ActiveAccount?.Usage;
-        ChatLabel.Text = usage?.ChatPercent is int chat ? $"{chat}% remaining" : "Waiting…";
-        WorkLabel.Text = usage?.WorkPercent is int work ? $"{work}% remaining" : "Waiting…";
+        ChatLabel.Text = usage?.ChatExcludedFromPlan == true ? "Not included" : usage?.ChatPercent is int chat ? $"{chat}% remaining" : "Waiting…";
+        WorkLabel.Text = usage?.WorkPercent is int work ? $"{work}% left" : "Waiting…";
         ChatResetLabel.Text = "Reset: " + (usage?.ChatReset ?? "Not shown");
         WorkResetLabel.Text = "Reset: " + (usage?.WorkReset ?? "Not shown");
         TokenStatus.Text = "Token information: " + (usage?.TokenInfo ?? "Not provided by ChatGPT");
